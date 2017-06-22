@@ -94,7 +94,8 @@ global Inst {
    
  const DEC        = 0;
  const HEX        = 1;
- const BIN        = 2;   
+ const BIN0       = 2; 
+ const BIN4       = 3;   
  const PRTSTR1    = 8d184;
  const PRTSTR2    = 8d184;  
  const PRTREG1    = 8d185;
