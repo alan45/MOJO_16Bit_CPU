@@ -1,0 +1,423 @@
+module mojo_top (
+    input clk,              // 50MHz clock
+    input rst_n,            // reset button (active low)
+    output led [8],         // 8 user controllable LEDs
+    input cclk,             // configuration clock, AVR ready when high
+    output spi_miso,        // AVR SPI MISO
+    input spi_ss,           // AVR SPI Slave Select
+    input spi_mosi,         // AVR SPI MOSI
+    input spi_sck,          // AVR SPI Clock
+    output spi_channel [4], // AVR general purpose pins (used by default to select ADC channel)
+    input avr_tx,           // AVR TX (FPGA RX)
+    output avr_rx,          // AVR RX (FPGA TX)
+    input avr_rx_busy,      // AVR RX buffer full
+    output io_led[24],      // The 24 leds on the i/o board
+    output io_seg [8],      // 7-segment LEDs on IO Shield
+    output io_sel [4],      // Digit select on IO Shield
+    input io_button [5],    // 5 buttons on IO Shield
+    input io_dip [3][8]     // DIP switches on IO Shield
+  ) {
+  
+  sig rst;                  // reset signal
+  sig program_counter[16];
+  sig run_status;
+  sig print_status;
+  
+  .clk(clk) {
+    // The reset conditioner is used to synchronize the reset signal to the FPGA
+    // clock. This ensures the entire FPGA comes out of reset at the same time.
+    reset_conditioner reset_cond;
+    edge_detector pc_step_edge;   // Used when stepping the PC under debug mode
+    edge_detector print_edge;     // Used when printing characters to the serial device
+    
+    .rst(rst) {
+      
+      avr_interface avr;
+      pulse pulse;
+      
+      //   dump_registers dump_registers;
+      multi_seven_seg seg_display;
+      cpu cpu;
+      timer timer;
+      fsm serial1 = {IDLE,START_STRPRT,START_REGPRT,SEND_A_CHAR,TEST_LETTER_COUNT,WAIT_FOR_TIMER};
+      bin_to_hex bin_to_hex;
+      
+      dff timer_value[8];
+      dff letter_count[8];
+      dff stringLength[8];
+      dff string_address[8];
+      dff serial_mode[8];
+      dff register_value[16];
+      dff string_to_print[64][8];
+      dff radix[4];
+      dff port0[16];
+      dff port1[16];
+      dff port2[16];
+      dff port3[16];
+    }
+  }
+  
+  
+  
+  
+  // Used to decode the program counter
+  
+  bin_to_dec pc_display(#DIGITS(4), #LEADING_ZEROS(0));
+  bin_to_dec reg_display(#DIGITS(5), #LEADING_ZEROS(0));
+  simple_dual_ram  dual_ram(#SIZE(16 ), #DEPTH(128));
+  instRom instRom;
+  bin_to_ascii bin_to_ascii;
+  
+  
+  
+  always {
+    reset_cond.in = ~rst_n;   // input raw inverted reset signal
+    rst = reset_cond.out;     // conditioned reset
+    
+    
+    instRom.address = 8bxxxxxxxx;
+    cpu.wait_command = 1bx;
+    
+    
+    // Default values for miscellaneous variable
+    io_led[23:0]                = 24bxxxxxxxxxxxxxxxxxxxxxxxx;
+    led                         = 8bxxxxxxxx;
+    io_seg                      = 8bx;             // 7-segment LEDs on IO Shield
+    io_sel                      = 4bx;             // Digit select on IO Shield
+    pc_step_edge.in             = 1bx;             // edge detector is in an if statement so needs a default
+    print_status                = 1;
+    reg_display.value           = 1bx;
+    radix.d                     = 4bxxxx;
+    bin_to_hex.register_value   = 16bxxxxxxxxxxxxxxxx;
+    bin_to_ascii.register_value = 16bxxxxxxxxxxxxxxxx;
+    
+    dual_ram.wclk       = clk;
+    dual_ram.rclk       = clk;
+    dual_ram.waddr      = 1;
+    dual_ram.raddr      = 1;
+    dual_ram.write_data = 16bxxxxxxxxxxxxxxxx;
+    dual_ram.write_en   = 0;
+    
+    
+    
+    
+    
+    
+    // connect input if(cpu.print   == 1)s of avr
+    avr.cclk        = cclk;
+    avr.spi_ss      = spi_ss;
+    avr.spi_mosi    = spi_mosi;
+    avr.spi_sck     = spi_sck;
+    avr.rx          = avr_tx;
+    
+    // connect outputs of avr
+    spi_miso        = avr.spi_miso;
+    spi_channel     = avr.spi_channel;
+    avr_rx          = avr.tx;
+    avr.channel     = hf;           // ADC is unused so disable
+    avr.tx_block    = avr_rx_busy; // block TX when AVR is busy
+    avr.tx_data     = 8bxxxxxxxx;
+    avr.new_tx_data = 0;
+    
+    
+    
+    
+    // MEMORY MAPPED I/O
+    // Address from 0 to 128 are used to store and retrieve data and above 128 are used as ports to outside events
+    // CPU currently uses address 128 to pass 8 bit parallel information to the LEDs
+    
+    
+    if (cpu.write)
+    {
+      case(cpu.address)
+        {
+        // Memory mapped RAM
+        0-127:
+          dual_ram.waddr      = cpu.address[6:0];
+          dual_ram.write_data = cpu.dout;
+          dual_ram.write_en   = 1;
+        
+        // Memory mapped Ports
+        140:
+          port0.d = cpu.dout;
+        
+        141:
+          port1.d  = cpu.dout;
+        
+        142:
+          port2.d = cpu.dout;
+        
+        143:
+          port3.d  = cpu.dout;
+      }
+    }
+    
+ /*   if(radix.q == Inst.HEX)  // Use the binary to hexadecimal decoder
+    {
+      bin_to_hex.register_value = register_value.q;
+      string_to_print.d[3] = bin_to_hex.hexadecimal_format[0];
+      string_to_print.d[2] = bin_to_hex.hexadecimal_format[1];
+      string_to_print.d[1] = bin_to_hex.hexadecimal_format[2];
+      string_to_print.d[0] = bin_to_hex.hexadecimal_format[3];
+      stringLength.d       = 5;
+      if( serial_mode.q == Inst.PRINT_REG2) string_to_print.d[4] = "\n";
+      else string_to_print.d[4] = " ";
+    }
+    
+    */ 
+    
+    if (cpu.read)
+    {
+      dual_ram.write_en   = 0;
+      dual_ram.waddr      = cpu.address[6:0];
+      //   cpu.din             = dual_ram.read_data;
+    }
+    
+    
+    
+    
+    
+    // SERIAL PRINTING
+    // Code to retrieve letters in turn from the string stored in instRom at strAddress and
+    // send it out via the serial interface on the MOJO.
+    // Receipt of a pulse when the cpu encounters a PRINT statement causes the FSM to start
+    // Rather than test if tx_busy is true I send out characters at defined intervals
+    // as tx_busy didn't work that well. I think it is set up to work well when there is data coming
+    // in but not when accessing the avr module the way I do.
+    // These routines also handle printing register contents
+    
+    instRom.strAddress = 0;
+    
+    print_edge.in = pulse.print;
+    
+    if(cpu.print_mode == Inst.PRINT_STR)
+    {
+      bin_to_hex.register_value = register_value.q;
+      string_to_print.d[3] = bin_to_hex.hexadecimal_format[0];
+      string_to_print.d[2] = bin_to_hex.hexadecimal_format[1];
+      string_to_print.d[1] = bin_to_hex.hexadecimal_format[2];
+      string_to_print.d[0] = bin_to_hex.hexadecimal_format[3];
+      stringLength.d       = 5;
+      if( serial_mode.q == Inst.PRINT_REG2) string_to_print.d[4] = "\n";
+      else string_to_print.d[4] = " ";
+    }
+    
+    if(cpu.print   == 1)
+    {
+      string_address.d    = cpu.string_address;
+      stringLength.d      = cpu.stringLength + 1;
+    }
+    
+    
+    
+    // Latch the cpu.reg_value
+    if(cpu.print_mode == Inst.PRINT_REG1)
+    {
+      if(cpu.print   == 1)
+      {
+        serial_mode.d    = Inst.PRINT_REG1;
+        register_value.d = cpu.reg_value;
+        radix.d          = cpu.print_radix;
+      }
+    }
+    
+    // Latch the cpu.reg_value
+    if(cpu.print_mode == Inst.PRINT_REG2)
+    {
+      if(cpu.print   == 1)
+      {
+        serial_mode.d    = Inst.PRINT_REG2;
+        register_value.d = cpu.reg_value;
+        radix.d          = cpu.print_radix;
+      }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    case (serial1.q)
+      {
+      serial1.IDLE:
+        avr.new_tx_data     =  0;
+        print_status        =  1;
+        letter_count.d      =  0;
+        if((cpu.print_mode == Inst.PRINT_STR)  && (cpu.print   == 1)) serial1.d = serial1.START_STRPRT;
+        if((cpu.print_mode == Inst.PRINT_REG1) && (cpu.print   == 1)) serial1.d = serial1.START_REGPRT;
+        if((cpu.print_mode == Inst.PRINT_REG2) && (cpu.print   == 1)) serial1.d = serial1.START_REGPRT;
+      
+      
+      serial1.START_STRPRT:
+        instRom.strAddress  = string_address.q;
+        string_to_print.d   = instRom.str;
+        avr.new_tx_data     =   0;
+        letter_count.d      = 0;
+        print_status        = 0;
+        serial1.d            = serial1.SEND_A_CHAR;
+      
+      
+      serial1.START_REGPRT:
+        // Get the number to print and format it into digits
+        
+        if(radix.q == Inst.DEC)  // Use the binary to decimal decoder
+        {
+          reg_display.value    = register_value.q;
+          string_to_print.d[0] = reg_display.digits[4] + 48;
+          string_to_print.d[1] = reg_display.digits[3] + 48;
+          string_to_print.d[2] = reg_display.digits[2] + 48;
+          string_to_print.d[3] = reg_display.digits[1] + 48;
+          string_to_print.d[4] = reg_display.digits[0] + 48;
+          stringLength.d       = 6;
+          
+          if( serial_mode.q == Inst.PRINT_REG2) string_to_print.d[5] = "\n";
+          else string_to_print.d[5] = " ";
+          
+        }
+        
+        
+        if(radix.q == Inst.HEX)  // Use the binary to hexadecimal decoder
+        {
+          bin_to_hex.register_value = register_value.q;
+          string_to_print.d[3] = bin_to_hex.hexadecimal_format[0];
+          string_to_print.d[2] = bin_to_hex.hexadecimal_format[1];
+          string_to_print.d[1] = bin_to_hex.hexadecimal_format[2];
+          string_to_print.d[0] = bin_to_hex.hexadecimal_format[3];
+          stringLength.d       = 5;
+          if( serial_mode.q == Inst.PRINT_REG2) string_to_print.d[4] = "\n";
+          else string_to_print.d[4] = " ";
+        }
+        
+        if(radix.q == Inst.BIN)  // Use the binary to ASCII lookup
+        {
+          bin_to_ascii.register_value = register_value.q;
+          
+          string_to_print.d[15] = bin_to_ascii.ascii_format[0];
+          string_to_print.d[14] = bin_to_ascii.ascii_format[1];
+          string_to_print.d[13] = bin_to_ascii.ascii_format[2];
+          string_to_print.d[12] = bin_to_ascii.ascii_format[3];
+          string_to_print.d[11] = bin_to_ascii.ascii_format[4];
+          string_to_print.d[10] = bin_to_ascii.ascii_format[5];
+          string_to_print.d[9] = bin_to_ascii.ascii_format[6];
+          string_to_print.d[8] = bin_to_ascii.ascii_format[7];
+          string_to_print.d[7] = bin_to_ascii.ascii_format[8];
+          string_to_print.d[6] = bin_to_ascii.ascii_format[9];
+          string_to_print.d[5] = bin_to_ascii.ascii_format[10];
+          string_to_print.d[4] = bin_to_ascii.ascii_format[11];
+          string_to_print.d[3] = bin_to_ascii.ascii_format[12];
+          string_to_print.d[2] = bin_to_ascii.ascii_format[13];
+          string_to_print.d[1] = bin_to_ascii.ascii_format[14];
+          string_to_print.d[0] = bin_to_ascii.ascii_format[15];
+          
+          stringLength.d       = 16;
+          if( serial_mode.q == Inst.PRINT_REG2) string_to_print.d[16] = "\n";
+          else string_to_print.d[16] = " ";
+        }
+        
+        avr.new_tx_data     = 0;
+        letter_count.d      = 0;
+        print_status        = 0;
+        serial1.d            = serial1.SEND_A_CHAR;
+      
+      
+      
+      
+      
+      serial1.SEND_A_CHAR:
+        avr.tx_data        =  string_to_print.q[letter_count.q];
+        
+        // reg_display returns 10 if unfilled characters
+        // This translates to ":" after adding 48
+        // So if character = ":" substitute a space
+        if(string_to_print.q[letter_count.q] == 58)  avr.tx_data = " ";
+        if(string_to_print.q[letter_count.q] == "_") avr.tx_data = " ";
+        
+        avr.new_tx_data    =  1;
+        letter_count.d     =  letter_count.q + 1;
+        print_status       = 0;
+        serial1.d           = serial1.WAIT_FOR_TIMER;
+      
+      
+      serial1.WAIT_FOR_TIMER:
+        avr.new_tx_data      =  0;
+        print_status         =  0;
+        if (print_edge.out) serial1.d = serial1.TEST_LETTER_COUNT;
+      
+      
+      serial1.TEST_LETTER_COUNT:
+        avr.new_tx_data      =  0;
+        print_status         =  0;
+        
+        // stop printing if we have reached or exceeded the string length
+        if (letter_count.q < stringLength.q) serial1.d = serial1.SEND_A_CHAR;
+        else serial1.d = serial1.IDLE;
+      
+      
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    // This converts the contents of register 9, the program counter to decimal digits so they
+    // can be written to the seven segment display on the IO board.
+    program_counter         =   cpu.registers[Reg.PC][13:0];
+    
+    if(program_counter < 2) program_counter = 0;
+    else program_counter = program_counter - 2;
+    
+    pc_display.value        =   program_counter[10:0];
+    seg_display.values      =   pc_display.digits;
+    io_seg                  = ~ seg_display.seg;
+    io_sel                  = ~ seg_display.sel;
+    
+    
+    // When cpu.start_timer pulses the valid value for the time to wait instRom
+    // is on cpu.timer_value. We need to capture this transient value and store it in
+    // the dff timer_value
+    if(cpu.start_timer == 1) timer_value.d = cpu.timer_value;
+    timer.target     = timer_value.q;
+    timer.start_stop = cpu.start_timer;
+    
+    
+    
+    
+    led           = port0.q[7:0];
+    io_led[7:0]   = port1.q[7:0];
+    io_led[15:8]  = port2.q[7:0];
+    io_led[23:16] = port3.q[7:0];
+    
+    
+    
+    
+    // If dip switch 0 (the extreme right hand one) is up step slowly through the
+    // assembler code in instRom otherwise run at full speed.
+    if(io_dip[0][0] == 1)
+    {
+      pc_step_edge.in = pulse.step;
+      run_status      = pc_step_edge.out;
+    }
+    else run_status   = 1;
+    
+    // If cpu_debug_status  = 1 then the cpu runs otherwise it stops
+    cpu.wait_command  = run_status && timer.pause && print_status ;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  }
+  
+  
+  
+}

@@ -1,0 +1,120 @@
+// Auto generated code for Alan Matheson's 16 bit cpu 
+// This cpu is derived from the 8 bit cpu by Justin Rajewski in the MOJO Lucid tutorials
+
+// Code generated from "Tables2.asm"  on DATE  
+
+module instRom (
+               input address[16],
+               input  strAddress[8],
+               output inst[40],
+               output str[64][8]
+               )
+ {
+
+always {
+        inst = c{Inst.NOP, 32b0};
+
+case (address) {
+
+//   #define MOJO_LEDS = 140
+//   #define IO_LEDS_A = 141
+//   #define IO_LEDS_B = 142
+//   #define IO_LEDS_C = 143
+//   #define DEC = 0
+//   #define HEX = 1
+//   #define BIN = 2
+
+// loop:
+      0: inst = c{Inst.MOVRI, 16d1, 16d1            };                // MOVRI R1, 1
+      1: inst = c{Inst.PRTSTR1, 16d21,16d1          };                // PRTSTR1 Decimal_Output_______
+      2: inst = c{Inst.PRTREG2, 16d1, 16d0          };                // PRTREG2 R1, DEC
+      3: inst = c{Inst.PRTSTR1, 16d21,16d3          };                // PRTSTR1 Hexadecimal_Output___
+      4: inst = c{Inst.PRTREG2, 16d1, 16d1          };                // PRTREG2 R1, HEX
+      5: inst = c{Inst.PRTSTR1, 16d21,16d5          };                // PRTSTR1 16_bit_Binary_Output_
+      6: inst = c{Inst.PRTREG2, 16d1, 16d2          };                // PRTREG2 R1, BIN
+      7: inst = c{Inst.PRTSTR2, 16d3,16d7           };                // PRTSTR2 _
+      8: inst = c{Inst.PRTSTR2, 16d3,16d8           };                // PRTSTR2 _
+      9: inst = c{Inst.WAIT, 32d100                  };                // WAIT 30
+      10: inst = c{Inst.MOVRI, 16d1, 16d16          };                // MOVRI R1, 16
+      11: inst = c{Inst.PRTSTR1, 16d21,16d11        };                // PRTSTR1 Decimal_Output_______
+      12: inst = c{Inst.PRTREG2, 16d1, 16d0         };                // PRTREG2 R1, DEC
+      13: inst = c{Inst.PRTSTR1, 16d21,16d13        };                // PRTSTR1 Hexadecimal_Output___
+      14: inst = c{Inst.PRTREG2, 16d1, 16d1         };                // PRTREG2 R1, HEX
+      15: inst = c{Inst.PRTSTR1, 16d21,16d15        };                // PRTSTR1 16_bit_Binary_Output_
+      16: inst = c{Inst.PRTREG2, 16d1, 16d2         };                // PRTREG2 R1, BIN
+      17: inst = c{Inst.PRTSTR2, 16d3,16d17         };                // PRTSTR2 _
+      18: inst = c{Inst.PRTSTR2, 16d3,16d18         };                // PRTSTR2 _
+      19: inst = c{Inst.WAIT, 32d100                 };                // WAIT 30
+      20: inst = c{Inst.MOVRI, 16d1, 16d128         };                // MOVRI R1, 128
+      21: inst = c{Inst.PRTSTR1, 16d21,16d21        };                // PRTSTR1 Decimal_Output_______
+      22: inst = c{Inst.PRTREG2, 16d1, 16d0         };                // PRTREG2 R1, DEC
+      23: inst = c{Inst.PRTSTR1, 16d21,16d23        };                // PRTSTR1 Hexadecimal_Output___
+      24: inst = c{Inst.PRTREG2, 16d1, 16d1         };                // PRTREG2 R1, HEX
+      25: inst = c{Inst.PRTSTR1, 16d21,16d25        };                // PRTSTR1 16_bit_Binary_Output_
+      26: inst = c{Inst.PRTREG2, 16d1, 16d2         };                // PRTREG2 R1, BIN
+      27: inst = c{Inst.PRTSTR2, 16d3,16d27         };                // PRTSTR2 _
+      28: inst = c{Inst.PRTSTR2, 16d3,16d28         };                // PRTSTR2 _
+      29: inst = c{Inst.WAIT, 32d100                 };                // WAIT 30
+      30: inst = c{Inst.MOVRI, 16d1, 16d1024        };                // MOVRI R1, 1024
+      31: inst = c{Inst.PRTSTR1, 16d21,16d31        };                // PRTSTR1 Decimal_Output_______
+      32: inst = c{Inst.PRTREG2, 16d1, 16d0         };                // PRTREG2 R1, DEC
+      33: inst = c{Inst.PRTSTR1, 16d21,16d33        };                // PRTSTR1 Hexadecimal_Output___
+      34: inst = c{Inst.PRTREG2, 16d1, 16d1         };                // PRTREG2 R1, HEX
+      35: inst = c{Inst.PRTSTR1, 16d21,16d35        };                // PRTSTR1 16_bit_Binary_Output_
+      36: inst = c{Inst.PRTREG2, 16d1, 16d2         };                // PRTREG2 R1, BIN
+      37: inst = c{Inst.PRTSTR2, 16d3,16d37         };                // PRTSTR2 _
+      38: inst = c{Inst.PRTSTR2, 16d3,16d38         };                // PRTSTR2 _
+      39: inst = c{Inst.WAIT, 32d100                 };                // WAIT 30
+      40: inst = c{Inst.MOVRI, 16d1, 16d8192        };                // MOVRI R1, 8192
+      41: inst = c{Inst.PRTSTR1, 16d21,16d41        };                // PRTSTR1 Decimal_Output_______
+      42: inst = c{Inst.PRTREG2, 16d1, 16d0         };                // PRTREG2 R1, DEC
+      43: inst = c{Inst.PRTSTR1, 16d21,16d43        };                // PRTSTR1 Hexadecimal_Output___
+      44: inst = c{Inst.PRTREG2, 16d1, 16d1         };                // PRTREG2 R1, HEX
+      45: inst = c{Inst.PRTSTR1, 16d21,16d45        };                // PRTSTR1 16_bit_Binary_Output_
+      46: inst = c{Inst.PRTREG2, 16d1, 16d2         };                // PRTREG2 R1, BIN
+      47: inst = c{Inst.PRTSTR2, 16d3,16d47         };                // PRTSTR2 _
+      48: inst = c{Inst.PRTSTR2, 16d3,16d48         };                // PRTSTR2 _
+      49: inst = c{Inst.WAIT, 32d100                 };                // WAIT 30
+      50: inst = c{Inst.WAIT, 32d200                };                // WAIT 100
+      51: inst = c{Inst.JMP, 32d0                   };                // JMP loop
+    }
+
+  
+
+
+
+
+
+case (strAddress) 
+    {
+
+     1:      str = $reverse("Decimal_Output_______                                           ");
+     3:      str = $reverse("Hexadecimal_Output___                                           ");
+     5:      str = $reverse("16_bit_Binary_Output_                                           ");
+     7:      str = $reverse("_\n                                                              ");
+     8:      str = $reverse("_\n                                                              ");
+     11:      str = $reverse("Decimal_Output_______                                           ");
+     13:      str = $reverse("Hexadecimal_Output___                                           ");
+     15:      str = $reverse("16_bit_Binary_Output_                                           ");
+     17:      str = $reverse("_\n                                                              ");
+     18:      str = $reverse("_\n                                                              ");
+     21:      str = $reverse("Decimal_Output_______                                           ");
+     23:      str = $reverse("Hexadecimal_Output___                                           ");
+     25:      str = $reverse("16_bit_Binary_Output_                                           ");
+     27:      str = $reverse("_\n                                                              ");
+     28:      str = $reverse("_\n                                                              ");
+     31:      str = $reverse("Decimal_Output_______                                           ");
+     33:      str = $reverse("Hexadecimal_Output__                                            ");
+     35:      str = $reverse("16_bit_Binary_Output                                            ");
+     37:      str = $reverse("_\n                                                              ");
+     38:      str = $reverse("_\n                                                              ");
+     41:      str = $reverse("Decimal_Output_______                                           ");
+     43:      str = $reverse("Hexadecimal_Output___                                           ");
+     45:      str = $reverse("16_bit_Binary_Output_                                           ");
+     47:      str = $reverse("_\n                                                              ");
+     48:      str = $reverse("_\n                                                              ");
+     default: str = $reverse("Error in string address                                         ");
+    }
+ }
+ }
+

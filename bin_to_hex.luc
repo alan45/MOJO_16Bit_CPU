@@ -1,0 +1,116 @@
+module bin_to_hex (
+    input clk,  // clock
+    input rst,  // reset
+    input register_value[16],
+    output hexadecimal_format[4][8]
+  ) {
+  
+  .clk(clk)
+  {
+    
+    .rst(rst)
+    {
+      dff field0[4];
+      dff field1[4];
+      dff field2[4];
+      dff field3[4];
+    }
+  }
+  
+  
+  always {
+    field0.d = register_value[3:0];
+    field1.d = register_value[7:4];
+    field2.d = register_value[11:8];
+    field3.d = register_value[15:12];
+    
+    hexadecimal_format[0] = 8bxxxxxxxx;
+    hexadecimal_format[1] = 8bxxxxxxxx;
+    hexadecimal_format[2] = 8bxxxxxxxx;
+    hexadecimal_format[3] = 8bxxxxxxxx;
+    
+    
+    
+    case(field0.q)
+      {
+      0: hexadecimal_format[0] = "0";
+      1: hexadecimal_format[0] = "1";
+      2: hexadecimal_format[0] = "2";
+      3: hexadecimal_format[0] = "3";
+      4: hexadecimal_format[0] = "4";
+      5: hexadecimal_format[0] = "5";
+      6: hexadecimal_format[0] = "6";
+      7: hexadecimal_format[0] = "7";
+      8: hexadecimal_format[0] = "8";
+      9: hexadecimal_format[0] = "9";
+      10: hexadecimal_format[0] = "A";
+      11: hexadecimal_format[0] = "B";
+      12: hexadecimal_format[0] = "C";
+      13: hexadecimal_format[0] = "D";
+      14: hexadecimal_format[0] = "E";
+      15: hexadecimal_format[0] = "F";
+    }
+    
+    case(field1.q)
+      {
+      0: hexadecimal_format[1] = "0";
+      1: hexadecimal_format[1] = "1";
+      2: hexadecimal_format[1] = "2";
+      3: hexadecimal_format[1] = "3";
+      4: hexadecimal_format[1] = "4";
+      5: hexadecimal_format[1] = "5";
+      6: hexadecimal_format[1] = "6";
+      7: hexadecimal_format[1] = "7";
+      8: hexadecimal_format[1] = "8";
+      9: hexadecimal_format[1] = "9";
+      10: hexadecimal_format[1] = "A";
+      11: hexadecimal_format[1] = "B";
+      12: hexadecimal_format[1] = "C";
+      13: hexadecimal_format[1] = "D";
+      14: hexadecimal_format[1] = "E";
+      15: hexadecimal_format[1] = "F";
+    }
+    
+    case(field2.q)
+      {
+      0: hexadecimal_format[2] = "0";
+      1: hexadecimal_format[2] = "1";
+      2: hexadecimal_format[2] = "2";
+      3: hexadecimal_format[2] = "3";
+      4: hexadecimal_format[2] = "4";
+      5: hexadecimal_format[2] = "5";
+      6: hexadecimal_format[2] = "6";
+      7: hexadecimal_format[2] = "7";
+      8: hexadecimal_format[2] = "8";
+      9: hexadecimal_format[2] = "9";
+      10: hexadecimal_format[2] = "A";
+      11: hexadecimal_format[2] = "B";
+      12: hexadecimal_format[2] = "C";
+      13: hexadecimal_format[2] = "D";
+      14: hexadecimal_format[2] = "E";
+      15: hexadecimal_format[2] = "F";
+    }
+    
+    case(field3.q)
+      {
+      0: hexadecimal_format[3] = "0";
+      1: hexadecimal_format[3] = "1";
+      2: hexadecimal_format[3] = "2";
+      3: hexadecimal_format[3] = "3";
+      4: hexadecimal_format[3] = "4";
+      5: hexadecimal_format[3] = "5";
+      6: hexadecimal_format[3] = "6";
+      7: hexadecimal_format[3] = "7";
+      8: hexadecimal_format[3] = "8";
+      9: hexadecimal_format[3] = "9";
+      10: hexadecimal_format[3] = "A";
+      11: hexadecimal_format[3] = "B";
+      12: hexadecimal_format[3] = "C";
+      13: hexadecimal_format[3] = "D";
+      14: hexadecimal_format[3] = "E";
+      15: hexadecimal_format[3] = "F";
+    }
+    
+    
+  }
+}

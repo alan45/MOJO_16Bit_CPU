@@ -1,0 +1,24 @@
+module bin_to_ascii (
+    input register_value[16],
+    output ascii_format[16][8]
+  ) {
+  
+  always {
+    if(register_value[0] == 0) ascii_format[0] = "0"; else ascii_format[0] = "1";
+    if(register_value[1] == 0) ascii_format[1] = "0"; else ascii_format[1] = "1";
+    if(register_value[2] == 0) ascii_format[2] = "0"; else ascii_format[2] = "1";
+    if(register_value[3] == 0) ascii_format[3] = "0"; else ascii_format[3] = "1";
+    if(register_value[4] == 0) ascii_format[4] = "0"; else ascii_format[4] = "1";
+    if(register_value[5] == 0) ascii_format[5] = "0"; else ascii_format[5] = "1";
+    if(register_value[6] == 0) ascii_format[6] = "0"; else ascii_format[6] = "1";
+    if(register_value[7] == 0) ascii_format[7] = "0"; else ascii_format[7] = "1";
+    if(register_value[8] == 0) ascii_format[8] = "0"; else ascii_format[8] = "1";
+    if(register_value[9] == 0) ascii_format[9] = "0"; else ascii_format[9] = "1";
+    if(register_value[10] == 0) ascii_format[10] = "0"; else ascii_format[10] = "1";
+    if(register_value[11] == 0) ascii_format[11] = "0"; else ascii_format[11] = "1";
+    if(register_value[12] == 0) ascii_format[12] = "0"; else ascii_format[12] = "1";
+    if(register_value[13] == 0) ascii_format[13] = "0"; else ascii_format[13] = "1";
+    if(register_value[14] == 0) ascii_format[14] = "0"; else ascii_format[14] = "1";
+    if(register_value[15] == 0) ascii_format[15] = "0"; else ascii_format[15] = "1";
+   }
+}

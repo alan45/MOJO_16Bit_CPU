@@ -1,0 +1,322 @@
+// Steps one step through the assembler program on receipt of a "s"
+// if the left hand switch on the io board is down. Otherwise runs the program at
+// full speed if the switch is up.
+
+module cpu (
+    input   clk,                           // clock
+    input   rst,                           // reset
+    output  write,                         // CPU write request
+    output  start_timer,
+    output  timer_value[8],
+    output  read,                          // CPU read request
+    output  address[8],                    // read/write address for external memory
+    output  dout[Width.REGISTER],          // write data to LEDs on MOJO
+    output  print_radix[4],                // Radix that numbers are to be printed in
+    output  registers[16][Width.REGISTER], // Used by dump_registers to print register contents
+    output  print,                         // Activates serial print code
+    output  print_mode[2],                 // How the print is to be handled
+    output  string_address[8],             // which string to print
+    output  stringLength[8],
+    output  reg_value[16],                 // Value of the register to print
+    input   wait_command,
+    output  cpu_status
+    
+  ) {
+  
+  .clk(clk)
+  {
+    
+    .rst(rst)
+    {
+      dff cpu_reg[16][Width.REGISTER];      // CPU Registers are 16 bits wide
+      
+      // Using dffs instaed of sigs maintains the value within the entire module cpu.luc
+      
+      
+      dff op[Width.OPCODE];
+      dff arg1[Width.REGISTER];
+      dff arg2[Width.REGISTER];
+      dff constant[Width.CONSTANT];
+      //  dff stack[32][16];
+      //  dff stack_ptr[8];
+      
+      fsm state = {SETUP,PASS1,PAUSE1,PAUSE2};
+      
+      
+      
+      //  counter counter;
+    }
+  }
+  
+  
+  instRom asm;  // program ROM
+  
+  
+  
+  always {
+    
+    
+    // defaults
+    write           = 0;
+    read            = 0;
+    timer_value     = 8bxxxxxxxx;
+    string_address  = 8bxxxxxxxx;
+    stringLength    = 8bxxxxxxxx;
+    address         = 8bxxxxxxxx;
+    asm.strAddress  = 8bxxxxxxxx;
+    asm.address     = 16bxxxxxxxxxxxxxxxx;
+    dout            = 16bxxxxxxxxxxxxxxxx;
+    reg_value       = 16bxxxxxxxxxxxxxxxx;
+    registers       = cpu_reg.q;
+    start_timer     = 0;
+    cpu_status      = 1bx;
+    print           = 0;
+    print_mode      = 2bxx;
+    print_radix     = 4bxxxx;
+    
+    // ************************** STATE MACHINE 1 ****************************************
+    // PASS1  runs the program in instRom
+    
+    case (state.q)
+      {
+      state.SETUP:
+        
+        // Just initialise a few things then go immediately to PASS1
+        cpu_reg.d[Reg.PC] = 0;
+        asm.address       = cpu_reg.q[Reg.PC];
+        dout              = 1;
+        print             = 0;
+        stringLength      = 0;          // Output the length of the string to print
+        string_address    = 0;          // Output the string number to print
+        state.d           = state.PASS1;
+      
+      
+      state.PASS1:
+        
+        cpu_reg.d[Reg.PC] = cpu_reg.q[Reg.PC] + 1;       // increment PC by default
+        
+        
+        asm.address = cpu_reg.q[Reg.PC]; // reg 0 is program counter
+        cpu_status  = 1;                 // Cpu is running
+        
+        
+        // Code for 16 bit wide registers
+        // Using dffs instaed of sigs maintains the value within the entire module cpu.luc
+        op.d       = asm.inst[39:32];    // opcode is 8 bits
+        arg1.d     = asm.inst[31:16];    // arg1 is  16 bits
+        arg2.d     = asm.inst[15:0];     // arg2 is  16 bits
+        constant.d = asm.inst[31:0];     // constant = arg1 + arg2
+        dout = 8;                        // dout tracks which state we are in
+        
+             
+        
+        
+        
+        // Perform the operation
+        case (op.q) {
+          
+          
+          Inst.WRITEII:
+            write   = 1;
+            dout    = arg1.q;
+            address = arg2.q[7:0];
+          
+          
+          Inst.WRITERI: //OK
+            write   = 1;
+            dout    = cpu_reg.q[arg1.q];
+            address = arg2.q[7:0];
+          
+          Inst.WRITERR:
+            write   = 1;
+            dout    = cpu_reg.q[arg1.q];
+            address = cpu_reg.q[arg2.q][7:0];
+          
+          
+          Inst.ANDRI:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] && arg2.q;
+          
+          Inst.ANDRR:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] && cpu_reg.q[arg2.q];
+          
+          
+          Inst.ORRI:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] | arg2.q;
+          
+          Inst.ORRR:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] | cpu_reg.q[arg2.q];
+          
+          
+          
+          Inst.SUBRI:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] - arg2.q;
+          
+          
+          Inst.SUBRR:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] - cpu_reg.q[arg2.q];
+          
+          
+          Inst.ADDRI:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] + arg2.q;
+          
+          
+          Inst.ADDRR:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] + cpu_reg.q[arg2.q];
+          
+          
+          Inst.MULTRI:
+           cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] * arg2.q; 
+          
+          Inst.MULTRR:
+           cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] * cpu_reg.q[arg2.q]; 
+          
+          
+          Inst.INV:
+            cpu_reg.d[arg1.q] = ~cpu_reg.q[arg1.q];
+          
+          
+          Inst.XORR:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] ^ cpu_reg.q[arg2.q];
+          
+          Inst.XORI:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg1.q] ^ arg2.q;
+          
+          
+          
+          
+          
+          
+          Inst.JMP:
+            cpu_reg.d[Reg.PC] = constant.q[15:0];
+          
+          
+          Inst.JZERO:
+            if(cpu_reg.q[Reg.FLAG][Flag.ZERO] == 1 )
+              cpu_reg.d[Reg.PC] = constant.q[15:0];
+          
+          
+          Inst.JEQ:
+            if(cpu_reg.q[Reg.FLAG][Flag.EQUAL] == 1 )
+              cpu_reg.d[Reg.PC] =  constant.q[15:0];
+          
+          Inst.JLESS:
+            if(cpu_reg.q[Reg.FLAG][Flag.LESS]    == 1 )
+              cpu_reg.d[Reg.PC] =  constant.q[15:0];
+          
+          
+          Inst.JMORE:
+            if(cpu_reg.q[Reg.FLAG][Flag.MORE]    == 1 )
+              cpu_reg.d[Reg.PC] =  constant.q[15:0];
+          
+          
+          Inst.JNEQ:
+            if(cpu_reg.q[Reg.FLAG][Flag.NOT_EQUAL] == 1 )
+              cpu_reg.d[Reg.PC] = constant.q[15:0];
+          
+          
+          
+          
+          Inst.CMPRI:
+            cpu_reg.d[Reg.FLAG] = 0;
+            if (cpu_reg.q[arg1.q] == 0      ) cpu_reg.d[Reg.FLAG][Flag.ZERO]       = 1;
+            if (cpu_reg.q[arg1.q] ==  arg2.q) cpu_reg.d[Reg.FLAG][Flag.EQUAL]      = 1;
+            if (cpu_reg.q[arg1.q] <   arg2.q) cpu_reg.d[Reg.FLAG][Flag.LESS]       = 1;
+            if (cpu_reg.q[arg1.q] >   arg2.q) cpu_reg.d[Reg.FLAG][Flag.MORE]       = 1;
+            if (cpu_reg.q[arg1.q] !=  arg2.q) cpu_reg.d[Reg.FLAG][Flag.NOT_EQUAL]  = 1;
+            if (cpu_reg.q[arg1.q] <=  arg2.q) cpu_reg.d[Reg.FLAG][Flag.LESS_EQUAL] = 1;
+            if (cpu_reg.q[arg1.q] >=  arg2.q) cpu_reg.d[Reg.FLAG][Flag.MORE_EQUAL] = 1;
+          
+          
+          
+          
+          Inst.CMPRR:
+            cpu_reg.d[Reg.FLAG] = 0;
+            
+            if (cpu_reg.q[arg1.q] ==  cpu_reg.q[arg2.q]) cpu_reg.d[Reg.FLAG][Flag.EQUAL]      = 1;
+            if (cpu_reg.q[arg1.q] <   cpu_reg.q[arg2.q]) cpu_reg.d[Reg.FLAG][Flag.LESS]       = 1;
+            if (cpu_reg.q[arg1.q] >   cpu_reg.q[arg2.q]) cpu_reg.d[Reg.FLAG][Flag.MORE]       = 1;
+            if (cpu_reg.q[arg1.q] !=  cpu_reg.q[arg2.q]) cpu_reg.d[Reg.FLAG][Flag.NOT_EQUAL]  = 1;
+            if (cpu_reg.q[arg1.q] <=  cpu_reg.q[arg2.q]) cpu_reg.d[Reg.FLAG][Flag.LESS_EQUAL] = 1;
+            if (cpu_reg.q[arg1.q] >=  cpu_reg.q[arg2.q]) cpu_reg.d[Reg.FLAG][Flag.MORE_EQUAL] = 1;
+          
+          
+          Inst.MOVRI:
+            cpu_reg.d[arg1.q] = constant.q[15:0];
+          
+          Inst.MOVRR:
+            cpu_reg.d[arg1.q] = cpu_reg.q[arg2.q];
+            
+            /*
+               Inst.PUSH:
+               stack.d[cpu_reg.q[Reg.SP]] = cpu_reg.q[arg1.q];
+               cpu_reg.d[Reg.SP] = cpu_reg.q[Reg.SP] + 1;
+               
+               Inst.POP:
+               cpu_reg.d[arg1.q] = stack.q[cpu_reg.q[Reg.SP]];
+               cpu_reg.d[Reg.SP] = cpu_reg.q[Reg.SP] - 1;
+            
+            */
+          
+          //       Inst.GOSUB:
+          
+          //       stack.d[stack_ptr.q] = cpu_reg.q[Reg.PC];
+          //       cpu_reg.d[Reg.R6] = stack_ptr.q;
+          //       cpu_reg.d[Reg.R5] = stack.q[stack_ptr.q];
+          // Load PC with address of subroutine to jump to start_stop_edge.in   = start_stop_button.out;
+          //       cpu_reg.d[Reg.PC] = asm_label.q[constant.q];
+          
+          
+          
+          //       Inst.RET:
+          
+          // POP return address off the stack
+          //       cpu_reg.d[Reg.PC] = stack.q[stack_ptr.q];
+          //       cpu_reg.d[Reg.R4] = stack_ptr.q;
+          //       cpu_reg.d[Reg.R3] = stack.q[stack_ptr.q];
+          
+          Inst.PRTREG1:
+            reg_value   = cpu_reg.q[arg1.q];
+            print_radix = arg2.q[3:0];
+            print = 1;
+            print_mode = Inst.PRINT_REG1;
+          
+          Inst.PRTREG2:
+            reg_value = cpu_reg.q[arg1.q];
+            print_radix = arg2.q[3:0];
+            print = 1;
+            print_mode = Inst.PRINT_REG2;  
+            
+            
+          
+          Inst.PRTSTR1:
+            // The print statement contains length of the string in arg1 and index to the string in arg2
+            stringLength   = arg1.q[7:0];  // Output the length of the string to print
+            string_address = arg2.q[7:0];  // Output the string number to print
+            print          = 1;
+            print_mode     = Inst.PRINT_STR;
+          
+          
+          Inst.WAIT:
+            timer_value =  constant.q[7:0];
+            start_timer = 1;
+          
+        } //End of Case(op)
+        
+        state.d = state.PAUSE1;
+      
+      
+      
+      
+      state.PAUSE1:
+        print          = 0;
+        stringLength   = 0;  // Output the length of the string to print
+        string_address = 0;  // Output the string number to print
+        
+        cpu_status = 0; // cpu is in Halt state
+        if(wait_command == 1)  state.d = state.PASS1;
+      
+      
+      
+    } // End of case(state)
+  }
+}

@@ -1,0 +1,16 @@
+module pulse (
+    input clk,    // clock
+    input rst,    // reset
+    output step,   // output to simple_dual_ram
+    output print
+  ) {
+  
+  // was 24
+  dff counter[28](.clk(clk), .rst(rst));
+
+  always {
+    print = counter.q[17];  // was 18
+    step  = counter.q[27];
+    counter.d = counter.q + 1;
+  }
+}

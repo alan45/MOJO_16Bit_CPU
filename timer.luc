@@ -1,0 +1,55 @@
+module timer (
+    input clk,  // clock
+    input rst,  // reset
+    input target[8],
+    input start_stop,
+    output pause,
+    output value[14]
+    
+  ) {
+  
+  .clk(clk){
+    .rst(rst){
+      fsm state = {IDLE,RUNNING};
+    }
+    
+    dff tenth_ctr [23];
+    dff ctr [8];
+  }
+  
+  
+  
+  
+  always {
+    value = ctr.q;
+    pause = 1bx;
+    
+    // The output pause is always high except while the FSM counts up to the value
+    // in tenths of a second set by delay
+    case(state.q) {
+      state.IDLE:
+        tenth_ctr.d = 0;
+        ctr.d = 0;
+        pause = 1;
+        if(start_stop)
+          state.d = state.RUNNING;
+      
+      state.RUNNING:
+        pause = 0;
+        tenth_ctr.d = tenth_ctr.q + 1;
+        
+        if(tenth_ctr.q >= 4999999){
+          tenth_ctr.d = 0;
+          ctr.d = ctr.q + 1;
+        
+        if(ctr.q >= 9999)
+          ctr.d = 0;
+        }
+             
+      if((start_stop) | (ctr.q == target)) state.d = state.IDLE;
+      
+      
+      
+    }
+  }
+}

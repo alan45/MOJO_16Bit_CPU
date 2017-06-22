@@ -1,0 +1,147 @@
+global Inst {
+  
+ // ********** Special Instructions ******** 
+ // Codes 0 - 19 
+ const NOP      = 40d0;  // Do nothing
+  
+  // ******** Memory Access Instructions ***
+  // Codes 20 - 39 
+  const WRITEII = 8d20;
+  const WRITERI = 8d21;
+  const WRITERR = 8d22;
+    
+  const READRI  = 8d30;  
+  const READRR  = 8d31;
+  
+  // ******** Move Data to Registers from Registers and constant *****
+  // Codes 40 - 59 
+  const MOVRI   = 8d40; 
+  const MOVRR   = 8d41; 
+  
+  //*********** Math Operations ***********
+  // Codes 60 - 79  
+  // Addition and Subtraction
+  const ADDRI   = 8d60;  
+  const ADDRR   = 8d61;
+  
+  
+  const SUBRI   = 8d65;  
+  const SUBRR   = 8d66;
+  
+  
+  // Multiplication and Division
+  // Codes 80 - 99 
+  
+  const MULTRI = 8d80;
+  const MULTRR = 8d81;
+  
+  
+  
+  // Logical Instructions
+  // Codes 100 - 119 
+  const SHL     = 8d100; 
+  const SHR     = 8d101; 
+ 
+  const ANDRR   = 8d108; 
+  const ANDRI   = 8d109; 
+  
+  
+  const ORRI    = 8d112; 
+  const ORRR    = 8d113; 
+ 
+  
+  const INV     = 8d116; 
+  
+  const XORR    = 8d118; 
+  const XORI    = 8d119; 
+  
+ 
+ // ****** Comparison Operations  **********
+ // Codes 120 - 139 
+ const CMPRR    = 8d120;  
+ const CMPRI    = 8d121;  
+  
+  
+ // ************* Jumps *************** 
+ // Codes 140 - 159 
+ const JMP      = 8d140; 
+ const JEQ      = 8d141;  
+ const JNEQ     = 8d142; 
+ const JLESS    = 8d143;
+ const JMORE    = 8d144;
+ const JZERO    = 8d145; 
+ const DJNZ     = 8d150; 
+  
+  
+   
+ // ********** Stack Instructions ******
+ // Codes 160 to 179 
+ const PUSH     = 160;
+ const POP      = 165;  
+  
+  
+ // ********* Other Instructions ************   
+ // Codes 180 - 199 
+  
+ const OUTPI      = 8d180; 
+ const OUTPR      = 8d181; 
+ const CTR_ZERO   = 8d182;
+ const WAIT       = 8d183;
+ 
+ const PRINT_STR  = 0; 
+ const PRINT_REG1 = 1;
+ const PRINT_REG2 = 2;
+   
+ const DEC        = 0;
+ const HEX        = 1;
+ const BIN        = 2;   
+ const PRTSTR1    = 8d184;
+ const PRTSTR2    = 8d184;  
+ const PRTREG1    = 8d185;
+ const PRTREG2    = 8d182;
+  
+ const GOSUB      = 8d190; 
+ const RET        = 8d192;   
+}
+
+
+
+
+
+
+
+
+global Reg {
+  // Special purpose registers
+  const FLAG      = 16d8;
+  const PC        = 16d0;
+  const SP        = 16d10;
+  const COUNTER   = 16d11;
+  }
+
+
+
+
+  
+global Width {
+const LABEL       = 32; 
+const OPCODE      = 8;
+const REGISTER    = 16;
+const ADDRESS     = 16;  
+const CONSTANT    = 32;  
+}  
+
+
+global Flag {
+ const ZERO       = 0;
+ const EQUAL      = 1;
+ const LESS       = 2;
+ const MORE       = 3;
+ const NOT_EQUAL  = 4;
+ const LESS_EQUAL = 5;
+ const MORE_EQUAL = 6;  
+ }
+
+
+  
+ 
